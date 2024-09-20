@@ -1,27 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
-  color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  padding: 1rem;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+h2 {
+  margin: 1rem;
+  text-decoration: underline;
+}
+form {
+  margin: 1rem;
+}
+form > div {
+  padding: 0.5rem 0;
+}
+form label {
+  display: inline-block;
+  width: 120px;
+
+  text-align: right;
+  padding-right: 1rem;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
   }
 }
