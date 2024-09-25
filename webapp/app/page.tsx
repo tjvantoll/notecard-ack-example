@@ -13,8 +13,12 @@ interface EventsResponse {
 }
 
 const Home = () => {
-  const projectUID = "app:ce189a5b-518a-4303-ab52-c421f95f3676";
-  const deviceUID = "dev:860322068093969";
+  // How often to poll for new events, in milliseconds. Note that retrieving events
+  // does use consumption credits (https://blues.com/pricing/#ess-essentials).
+  const POLL_INVERVAL_MS = 5000;
+
+  const projectUID = process.env.NEXT_PUBLIC_APP_UID;
+  const deviceUID = process.env.NEXT_PUBLIC_DEVICE_UID;
   const defaultClient = NotehubJs.ApiClient.instance;
   const api_key = defaultClient.authentications["api_key"];
   api_key.apiKey = process.env.NEXT_PUBLIC_NOTEHUB_API_KEY;
@@ -29,8 +33,9 @@ const Home = () => {
 
   const getLatestValue = () => {
     // This implementation is simple and only retrieves the latest acknowledgement
-    // event. A more sophisticated implementation would all recent acknowledgement
-    // events and cycle through them to ensure the UI is in sync with the device.
+    // event. A more sophisticated implementation would retrieve all recent
+    // acknowledgement events and cycle through them to ensure the UI is in sync with
+    // the device.
     eventApiInstance
       .getProjectEvents(projectUID, {
         deviceUID: [deviceUID],
@@ -38,7 +43,6 @@ const Home = () => {
         pageSize: 1,
         sortBy: "captured",
         sortOrder: "desc",
-        selectFields: ["body"],
       })
       .then((data: EventsResponse) => {
         if (!data || !data.events || data.events.length === 0) {
@@ -64,7 +68,7 @@ const Home = () => {
 
   React.useEffect(() => {
     getLatestValue();
-    const intervalId = setInterval(getLatestValue, 5000);
+    const intervalId = setInterval(getLatestValue, POLL_INVERVAL_MS);
     return () => clearInterval(intervalId);
   }, [lastId]);
 
