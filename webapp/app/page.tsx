@@ -9,6 +9,7 @@ interface EventsResponse {
       "led-state": string;
       id: string;
     };
+    when: number;
   }[];
 }
 
@@ -30,6 +31,7 @@ const Home = () => {
   const [dataLoaded, setDataLoaded] = React.useState(false);
   const [isPending, setIsPending] = React.useState(false);
   const [ledState, setLedState] = React.useState(false);
+  const [lastUpdated, setLastUpdated] = React.useState("");
 
   const getLatestValue = () => {
     // This implementation is simple and only retrieves the latest acknowledgement
@@ -58,6 +60,7 @@ const Home = () => {
         setDataLoaded(true);
         setLedState(state === "on");
         setIsPending(false);
+        setLastUpdated(new Date(data.events[0].when * 1000).toLocaleString());
 
         // Clear the lastId so you know the acknowledgment this UI scheduled
         // has been handled
@@ -111,8 +114,8 @@ const Home = () => {
             <span>my-device</span>
           </div>
           <div>
-            <label>SKU:</label>
-            <span>NOTE-WBNAW</span>
+            <label>Last Updated:</label>
+            <span>{lastUpdated}</span>
           </div>
           <div>
             <label>LED:</label>
