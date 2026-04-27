@@ -14,15 +14,14 @@ interface EventsResponse {
 }
 
 const Home = () => {
-  // How often to poll for new events, in milliseconds. Note that retrieving events
-  // does use consumption credits (https://blues.com/pricing/#ess-essentials).
-  const POLL_INVERVAL_MS = 5000;
+  // How often to poll for new events, in milliseconds.
+  const POLL_INVERVAL_MS = 1000 * 5;
 
   const projectUID = process.env.NEXT_PUBLIC_APP_UID;
   const deviceUID = process.env.NEXT_PUBLIC_DEVICE_UID;
   const defaultClient = NotehubJs.ApiClient.instance;
-  const api_key = defaultClient.authentications["api_key"];
-  api_key.apiKey = process.env.NEXT_PUBLIC_NOTEHUB_API_KEY;
+  const auth = defaultClient.authentications["personalAccessToken"];
+  auth.accessToken = process.env.NEXT_PUBLIC_NOTEHUB_PAT;
 
   const eventApiInstance = new NotehubJs.EventApi();
   const deviceApiInstance = new NotehubJs.DeviceApi();
