@@ -38,7 +38,7 @@ const Home = () => {
     // acknowledgement events and cycle through them to ensure the UI is in sync with
     // the device.
     eventApiInstance
-      .getProjectEvents(projectUID, {
+      .getEvents(projectUID, {
         deviceUID: [deviceUID],
         files: ["ack.qo"],
         pageSize: 1,
@@ -98,7 +98,7 @@ const Home = () => {
       id,
     };
     deviceApiInstance
-      .handleNoteAdd(projectUID, deviceUID, "commands.qi", note)
+      .addQiNote(projectUID, deviceUID, "commands.qi", note)
       .then(() => console.log("Successfully added note"))
       .catch(console.error);
   };

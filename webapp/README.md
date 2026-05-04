@@ -23,12 +23,12 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 For this app to run successfully you must create an `.env` file in the web app’s root folder with the following contents.
 
 ```bash
-NEXT_PUBLIC_NOTEHUB_API_KEY=your_api_key_here
+NEXT_PUBLIC_NOTEHUB_PAT=your_api_key_here
 NEXT_PUBLIC_APP_UID=app:123-456-789
 NEXT_PUBLIC_DEVICE_UID=dev:123456789
 ```
 
-Replace the three values with your [Notehub API key](https://dev.blues.io/api-reference/notehub-api/api-introduction/#authentication-with-session-tokens-deprecated), [ProjectUID](https://dev.blues.io/api-reference/glossary/#projectuid), and [DeviceUID](https://dev.blues.io/api-reference/glossary/#deviceuid), respectively.
+Replace the three values with your [Notehub Personal Access Token](https://dev.blues.io/api-reference/notehub-api/api-introduction/#authentication-with-personal-access-tokens), [ProjectUID](https://dev.blues.io/api-reference/glossary/#projectuid), and [DeviceUID](https://dev.blues.io/api-reference/glossary/#deviceuid), respectively.
 
 ## Learn More
 
