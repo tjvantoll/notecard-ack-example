@@ -1,8 +1,8 @@
 # Notecard Acknowledgment Example
 
-This sample app demonstrates a pattern for sending data from the cloud to a Notecard, processing it on the device, and then sending an acknowledgment back to the cloud.
+This sample app demonstrates how to control a device from the cloud by storing the device's state in a [DB Notefile](https://dev.blues.io/guides-and-tutorials/notecard-guides/storing-device-state-with-db-notefiles/). A web app writes the state it wants the device to have, the device applies that state, and the device acknowledges the change by reporting the state it actually has.
 
 * The [firmware](/firmware) is a PlatformIO project that runs on a Blues Swan.
 * The [web app](/webapp) is a Next.js project you can run locally or host on any cloud hosting provider.
 
-See [Sending Inbound Notes and Receiving Acknowledgment](https://dev.blues.com/example-apps/sample-apps/sending-inbound-notes-and-receiving-acknowledgment) for a full tutorial.
+See [Controlling Device State and Receiving Acknowledgment](https://dev.blues.io/example-apps/samples/controlling-device-state-and-receiving-acknowledgment/) for a full tutorial.

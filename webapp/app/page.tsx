@@ -1,105 +1,73 @@
 "use client";
 import React from "react";
 import { Switch } from "antd";
-import * as NotehubJs from "@blues-inc/notehub-js";
 
-interface EventsResponse {
-  events: {
-    body: {
-      "led-state": string;
-      id: string;
-    };
-    when: number;
-  }[];
+interface ReportedState {
+  flag: boolean;
+  time: number;
 }
 
 const Home = () => {
-  // How often to poll for new events, in milliseconds.
-  const POLL_INVERVAL_MS = 1000 * 5;
+  // How often to poll for the device's reported state, in milliseconds.
+  const POLL_INTERVAL_MS = 1000 * 5;
 
-  const projectUID = process.env.NEXT_PUBLIC_APP_UID;
   const deviceUID = process.env.NEXT_PUBLIC_DEVICE_UID;
-  const defaultClient = NotehubJs.ApiClient.instance;
-  const auth = defaultClient.authentications["personalAccessToken"];
-  auth.accessToken = process.env.NEXT_PUBLIC_NOTEHUB_PAT;
 
-  const eventApiInstance = new NotehubJs.EventApi();
-  const deviceApiInstance = new NotehubJs.DeviceApi();
-
-  const [lastId, setLastId] = React.useState("");
   const [dataLoaded, setDataLoaded] = React.useState(false);
   const [isPending, setIsPending] = React.useState(false);
   const [ledState, setLedState] = React.useState(false);
   const [lastUpdated, setLastUpdated] = React.useState("");
 
-  const getLatestValue = () => {
-    // This implementation is simple and only retrieves the latest acknowledgement
-    // event. A more sophisticated implementation would retrieve all recent
-    // acknowledgement events and cycle through them to ensure the UI is in sync with
-    // the device.
-    eventApiInstance
-      .getEvents(projectUID, {
-        deviceUID: [deviceUID],
-        files: ["ack.qo"],
-        pageSize: 1,
-        sortBy: "captured",
-        sortOrder: "desc",
+  const getReportedState = () => {
+    // The /api/led route reads the device's reported state from Notehub. The
+    // request goes to this app's own server so the Personal Access Token
+    // never reaches the browser.
+    fetch("/api/led", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to read reported state: ${response.status}`);
+        }
+        return response.json();
       })
-      .then((data: EventsResponse) => {
-        if (!data || !data.events || data.events.length === 0) {
-          return;
-        }
-
-        const state = data.events[0].body["led-state"];
-        const id = data.events[0].body.id;
-        if (lastId && id !== lastId) {
-          return;
-        }
-
+      .then((data: ReportedState) => {
         setDataLoaded(true);
-        setLedState(state === "on");
-        setIsPending(false);
-        setLastUpdated(new Date(data.events[0].when * 1000).toLocaleString());
+        setLastUpdated(new Date(data.time * 1000).toLocaleString());
 
-        // Clear the lastId so you know the acknowledgment this UI scheduled
-        // has been handled
-        setLastId("");
+        if (isPending) {
+          // Waiting on the device: clear the pending indicator once the
+          // device reports the state the user asked for.
+          if (data.flag === ledState) {
+            setIsPending(false);
+          }
+        } else {
+          // Not waiting on anything: show whatever the device reports.
+          setLedState(data.flag);
+        }
       })
       .catch(console.error);
   };
 
   React.useEffect(() => {
-    getLatestValue();
-    const intervalId = setInterval(getLatestValue, POLL_INVERVAL_MS);
+    getReportedState();
+    const intervalId = setInterval(getReportedState, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [lastId]);
-
-  const generateRandomString = (length: number) => {
-    const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-  };
+  }, [ledState, isPending]);
 
   const updateLed = (checked: boolean) => {
     setLedState(checked);
     setIsPending(true);
 
-    const id = generateRandomString(10);
-    setLastId(id);
-
-    const note = new NotehubJs.Note();
-    note.body = {
-      command: checked ? "led-on" : "led-off",
-      id,
-    };
-    deviceApiInstance
-      .addQiNote(projectUID, deviceUID, "commands.qi", note)
-      .then(() => console.log("Successfully added note"))
+    fetch("/api/led", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ flag: checked }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to update led-desired: ${response.status}`);
+        }
+        console.log("Successfully updated led-desired");
+      })
       .catch(console.error);
   };
 

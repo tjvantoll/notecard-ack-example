@@ -23,12 +23,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 For this app to run successfully you must create an `.env` file in the web app’s root folder with the following contents.
 
 ```bash
-NEXT_PUBLIC_NOTEHUB_PAT=your_api_key_here
+NOTEHUB_PAT=your_api_key_here
 NEXT_PUBLIC_APP_UID=app:123-456-789
 NEXT_PUBLIC_DEVICE_UID=dev:123456789
 ```
 
 Replace the three values with your [Notehub Personal Access Token](https://dev.blues.io/api-reference/notehub-api/api-introduction/#authentication-with-personal-access-tokens), [ProjectUID](https://dev.blues.io/api-reference/glossary/#projectuid), and [DeviceUID](https://dev.blues.io/api-reference/glossary/#deviceuid), respectively.
+
+`NOTEHUB_PAT` deliberately has no `NEXT_PUBLIC_` prefix. Next.js inlines any
+`NEXT_PUBLIC_` variable into the JavaScript it ships to the browser, so a token
+named that way is readable by anyone who loads the page. All Notehub calls run
+server-side in `app/api/led/route.ts` instead, and the browser only talks to
+this app's own `/api/led` endpoint.
 
 ## Learn More
 

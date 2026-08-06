@@ -6,6 +6,44 @@
 
 Notecard notecard;
 
+// The state the LED actually has.
+bool ledState = false;
+
+// Acknowledge a change by reporting the state the LED actually has. This
+// writes the led-reported variable in the Notecard's vars.db DB Notefile,
+// which syncs to Notehub, where the web app reads it.
+void reportLedState()
+{
+  J *req = notecard.newRequest("var.set");
+  if (req != NULL)
+  {
+    JAddStringToObject(req, "name", "led-reported");
+    JAddBoolToObject(req, "flag", ledState);
+    JAddBoolToObject(req, "sync", true);
+    notecard.sendRequest(req);
+  }
+}
+
+// Create the led-desired variable with a default value if it doesn't
+// exist yet, so the variable is always available for the web app to
+// read and update.
+void initializeLedDesired()
+{
+  J *req = notecard.newRequest("var.get");
+  JAddStringToObject(req, "name", "led-desired");
+
+  J *rsp = notecard.requestAndResponse(req);
+  if (notecard.responseError(rsp) &&
+      NoteResponseErrorContains(rsp, "{note-noexist}"))
+  {
+    J *set = notecard.newRequest("var.set");
+    JAddStringToObject(set, "name", "led-desired");
+    JAddBoolToObject(set, "flag", false);
+    notecard.sendRequest(set);
+  }
+  notecard.deleteResponse(rsp);
+}
+
 void setup()
 {
   static const size_t MAX_SERIAL_WAIT_MS = 5000;
@@ -34,61 +72,42 @@ void setup()
   // and ensure the light starts off.
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-}
 
-void sendAck(char *state, char *id)
-{
-  J *req = notecard.newRequest("note.add");
-  if (req != NULL)
+  // Make sure both state variables exist: led-desired for the web app
+  // to write, and led-reported for the web app to read.
+  initializeLedDesired();
+  reportLedState();
+
+  // Sync with Notehub immediately, so the variables appear there right
+  // away rather than waiting for the next periodic sync.
   {
-    JAddStringToObject(req, "file", "ack.qo");
-    JAddBoolToObject(req, "sync", true);
-    J *body = JAddObjectToObject(req, "body");
-    if (body)
-    {
-      JAddStringToObject(body, "led-state", state);
-      JAddStringToObject(body, "id", id);
-    }
+    J *req = notecard.newRequest("hub.sync");
     notecard.sendRequest(req);
   }
-
 }
 
 void loop()
 {
-  // To hold "led-on" and "led-off". Increase the size if you need to send longer commands.
-  char command[7];
-  char id[10];
-
-  J *req = notecard.newRequest("note.get");
-  JAddStringToObject(req, "file", "commands.qi");
-  JAddBoolToObject(req, "delete", true);
+  // Read the state the user wants the LED to have, which the web app
+  // writes to the led-desired variable in the Notecard's vars.db
+  // DB Notefile.
+  J *req = notecard.newRequest("var.get");
+  JAddStringToObject(req, "name", "led-desired");
 
   J *rsp = notecard.requestAndResponse(req);
-  if (notecard.responseError(rsp)) {
-    notecard.logDebug("No notes available");
-    command[0] = '\0';
-  } else {
-    J *body = JGetObject(rsp, "body");
-    strncpy(command, JGetString(body, "command"), sizeof(command));
-    strncpy(id, JGetString(body, "id"), sizeof(id));
+  if (!notecard.responseError(rsp))
+  {
+    bool desired = JGetBool(rsp, "flag");
+    if (desired != ledState)
+    {
+      notecard.logDebug(desired ? "Turning light on\n" : "Turning light off\n");
+      digitalWrite(LED_BUILTIN, desired ? HIGH : LOW);
+      ledState = desired;
+      reportLedState();
+    }
   }
-
   notecard.deleteResponse(rsp);
 
-  if (!strncmp(command, "led-on", sizeof("led-on")))
-  {
-    notecard.logDebug("Turning light on");
-    digitalWrite(LED_BUILTIN, HIGH);
-    sendAck("on", id);
-  }
-  if (!strncmp(command, "led-off", sizeof("led-off")))
-  {
-    notecard.logDebug("Turning light off");
-    digitalWrite(LED_BUILTIN, LOW);
-    sendAck("off", id);
-  }
-
-  // Wait one second before looking for changes again
+  // Wait one second before checking again
   delay(1000);
 }
